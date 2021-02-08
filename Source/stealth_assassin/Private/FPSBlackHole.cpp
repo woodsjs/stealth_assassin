@@ -39,7 +39,6 @@ void AFPSBlackHole::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Display, TEXT("About to pull in actors"));
 	PullInActors();
 	
 }
@@ -59,7 +58,6 @@ void AFPSBlackHole::PullInActors()
 void AFPSBlackHole::OverlapInnerSphere(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// Only add impulse and destroy projectile if we hit a physics
-	UE_LOG(LogTemp, Display, TEXT("Hitters"));
 
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) && OtherComp->IsSimulatingPhysics())
 	{
