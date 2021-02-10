@@ -11,6 +11,10 @@ class AFPSGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+protected:
+	UPROPERTY(EditDefaultsOnly, category = "Spectating")
+	TSubclassOf<AActor> SpectatingViewpointClass;
+
 public:
 
 	AFPSGameMode();
