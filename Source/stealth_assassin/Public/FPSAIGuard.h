@@ -21,14 +21,24 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	FRotator OriginalRotation;
+
+	FTimerHandle TimerHandle_ResetOrientation;
+
 	UPROPERTY(VisibleAnywhere, category = "Components")
 	UPawnSensingComponent* PawnSensingComp;
+
+	UPROPERTY(EditInstanceOnly, category = "AI")
+	float DistractionTime = 3.0f;
 
 	UFUNCTION()
 	void OnPawnSeen(APawn* SeenPawn);
 
 	UFUNCTION()
 	void OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume);
+
+	UFUNCTION()
+	void ResetOrientation();
 
 public:	
 	// Called every frame
