@@ -21,6 +21,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	bool isRotating;
+	FVector NoiseLocation;
 	FRotator OriginalRotation;
 
 	FTimerHandle TimerHandle_ResetOrientation;

@@ -4,6 +4,7 @@
 #include "FPSAIGuard.h"
 #include "AIModule/Classes/Perception/PawnSensingComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Math/UnrealMathUtility.h"
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -23,6 +24,7 @@ void AFPSAIGuard::BeginPlay()
 	Super::BeginPlay();
 
 	OriginalRotation = GetActorRotation();
+	isRotating = false;
 	
 }
 
@@ -41,15 +43,20 @@ void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 {
 
 	DrawDebugSphere(GetWorld(), Location, 32.0f, 12, FColor::Green, false, 10.0f);
+	NoiseLocation = Location;
+	//FVector Direction = Location - GetActorLocation();
+	//Direction.Normalize();
 
-	FVector Direction = Location - GetActorLocation();
-	Direction.Normalize();
+	//FRotator NewLookAt = FRotationMatrix::MakeFromX(Direction).Rotator();
+	//NewLookAt.Pitch = 0.0f;
+	//NewLookAt.Roll = 0.0f;
 
-	FRotator NewLookAt = FRotationMatrix::MakeFromX(Direction).Rotator();
-	NewLookAt.Pitch = 0.0f;
-	NewLookAt.Roll = 0.0f;
+	//SetActorRotation(NewLookAt);
 
-	SetActorRotation(NewLookAt);
+	
+	// let's set is rotating here, then tick should fire out code?
+	// we would then setactorrotation using FMath::Lerp, which is what I thought!
+	isRotating = true;
 
 	GetWorldTimerManager().ClearTimer(TimerHandle_ResetOrientation);
 	GetWorldTimerManager().SetTimer(TimerHandle_ResetOrientation, this, &AFPSAIGuard::ResetOrientation, DistractionTime);
@@ -58,12 +65,28 @@ void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 void AFPSAIGuard::ResetOrientation()
 {
 	SetActorRotation(OriginalRotation);
+    
 }
 
 // Called every frame
 void AFPSAIGuard::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (isRotating)
+	{
+		FVector Direction = NoiseLocation - GetActorLocation();
+		Direction.Normalize();
+
+		FRotator NewLookAt = FRotationMatrix::MakeFromX(Direction).Rotator();
+		NewLookAt.Pitch = 0.0f;
+		NewLookAt.Roll = 0.0f;
+
+		SetActorRotation(NewLookAt);
+		SetActorRotation(FMath::Lerp(GetActorRotation(), NewLookAt, 0.05f));
+		isRotating = false;
+
+	}
 
 }
 
