@@ -5,6 +5,7 @@
 #include "AIModule/Classes/Perception/PawnSensingComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
+#include "FPSGameMode.h"
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -37,22 +38,19 @@ void AFPSAIGuard::OnPawnSeen(APawn* SeenPawn)
 	}
 
 	DrawDebugSphere(GetWorld(), SeenPawn->GetActorLocation(), 32.0f, 12, FColor::Red, false, 10.0f);
+
+	AFPSGameMode* GM = Cast<AFPSGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		GM->CompleteMission(SeenPawn, false);
+	}
 }
 
 void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume)
 {
 
 	DrawDebugSphere(GetWorld(), Location, 32.0f, 12, FColor::Green, false, 10.0f);
-	NoiseLocation = Location;
-	//FVector Direction = Location - GetActorLocation();
-	//Direction.Normalize();
-
-	//FRotator NewLookAt = FRotationMatrix::MakeFromX(Direction).Rotator();
-	//NewLookAt.Pitch = 0.0f;
-	//NewLookAt.Roll = 0.0f;
-
-	//SetActorRotation(NewLookAt);
-
+	RotateToLocation = Location;
 	
 	// let's set is rotating here, then tick should fire out code?
 	// we would then setactorrotation using FMath::Lerp, which is what I thought!
@@ -64,8 +62,9 @@ void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 
 void AFPSAIGuard::ResetOrientation()
 {
+
+	//SetActorRotation(NewLookAt);
 	SetActorRotation(OriginalRotation);
-    
 }
 
 // Called every frame
@@ -75,15 +74,15 @@ void AFPSAIGuard::Tick(float DeltaTime)
 
 	if (isRotating)
 	{
-		FVector Direction = NoiseLocation - GetActorLocation();
+		FVector Direction = RotateToLocation - GetActorLocation();
 		Direction.Normalize();
 
 		FRotator NewLookAt = FRotationMatrix::MakeFromX(Direction).Rotator();
 		NewLookAt.Pitch = 0.0f;
 		NewLookAt.Roll = 0.0f;
 
-		SetActorRotation(NewLookAt);
-		SetActorRotation(FMath::Lerp(GetActorRotation(), NewLookAt, 0.05f));
+		//SetActorRotation(NewLookAt);
+		SetActorRotation(FMath::Lerp(GetActorRotation(), NewLookAt, 1.0f));
 		isRotating = false;
 
 	}

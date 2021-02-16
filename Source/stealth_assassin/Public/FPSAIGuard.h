@@ -22,7 +22,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	bool isRotating;
-	FVector NoiseLocation;
+	FVector RotateToLocation;
 	FRotator OriginalRotation;
 
 	FTimerHandle TimerHandle_ResetOrientation;
