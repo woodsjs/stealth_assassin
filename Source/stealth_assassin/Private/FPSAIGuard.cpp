@@ -6,6 +6,8 @@
 #include "DrawDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
 #include "FPSGameMode.h"
+#include "Engine/TargetPoint.h"
+#include "AIController.h"
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -17,6 +19,8 @@ AFPSAIGuard::AFPSAIGuard()
 
 	PawnSensingComp->OnSeePawn.AddDynamic(this, &AFPSAIGuard::OnPawnSeen);
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &AFPSAIGuard::OnNoiseHeard);
+
+	GuardState = EAIState::Idle;
 }	
 
 // Called when the game starts or when spawned
@@ -26,6 +30,11 @@ void AFPSAIGuard::BeginPlay()
 
 	OriginalRotation = GetActorRotation();
 	isRotating = false;
+
+	if (CanWander)
+	{
+		MoveToWaypoint();
+	}
 	
 }
 
@@ -44,10 +53,19 @@ void AFPSAIGuard::OnPawnSeen(APawn* SeenPawn)
 	{
 		GM->CompleteMission(SeenPawn, false);
 	}
+
+	SetGuardState(EAIState::Alerted);
 }
 
 void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, float Volume)
 {
+
+	// We don't need to be suspicious of a sound if we're already alerted
+	// because being alerted means we saw the player
+	if (GuardState == EAIState::Alerted)
+	{
+		return;
+	}
 
 	DrawDebugSphere(GetWorld(), Location, 32.0f, 12, FColor::Green, false, 10.0f);
 	RotateToLocation = Location;
@@ -58,14 +76,64 @@ void AFPSAIGuard::OnNoiseHeard(APawn* NoiseInstigator, const FVector& Location, 
 
 	GetWorldTimerManager().ClearTimer(TimerHandle_ResetOrientation);
 	GetWorldTimerManager().SetTimer(TimerHandle_ResetOrientation, this, &AFPSAIGuard::ResetOrientation, DistractionTime);
+
+	SetGuardState(EAIState::Suspicious);
 }
 
 void AFPSAIGuard::ResetOrientation()
 {
+	if (GuardState == EAIState::Alerted)
+	{
+		return;
+	}
 
 	//SetActorRotation(NewLookAt);
 	SetActorRotation(OriginalRotation);
+
+	SetGuardState(EAIState::Idle);
 }
+
+void AFPSAIGuard::SetGuardState(EAIState NewState)
+{
+	if (GuardState == NewState)
+	{
+		return;
+	}
+
+	GuardState = NewState;
+
+	onGuardStateChanged(NewState);
+}
+
+ATargetPoint* AFPSAIGuard::ChooseAvailableWaypoint()
+{
+
+	// what about a rand function?
+	for (auto target : Waypoints)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Our waypoint is %s"), &target);
+	}
+
+	return nullptr;
+}
+
+void AFPSAIGuard::MoveToWaypoint()
+{
+	// call choose rando waypoint
+	ATargetPoint* nextTarget;
+	nextTarget = ChooseAvailableWaypoint();
+
+	// move to that waypoint
+
+}
+
+//void AFPSAIGuard::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
+//{
+//	//AIController::OnMoveCompleted(RequestID, Result);
+//
+//	GetWorldTimerManager().ClearTimer(TimerHandle_Wander);
+//	GetWorldTimerManager().SetTimer(TimerHandle_Wander, this, &AFPSAIGuard::MoveToWaypoint, 3.0f);
+//}
 
 // Called every frame
 void AFPSAIGuard::Tick(float DeltaTime)
