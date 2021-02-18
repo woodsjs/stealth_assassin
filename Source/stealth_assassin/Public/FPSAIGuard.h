@@ -43,9 +43,13 @@ protected:
 	// Handle AI walking around map
 	UPROPERTY(EditInstanceOnly, category = "AI")
 	TArray<AActor*> Waypoints;
+
 	UPROPERTY(EditInstanceOnly, category = "AI")
 	bool CanWander;
+
 	FTimerHandle TimerHandle_Wander;
+	AActor* NextTarget;
+	bool bIsWandering;
 
 	UPROPERTY(VisibleAnywhere, category = "Components")
 	UPawnSensingComponent* PawnSensingComp;
@@ -74,13 +78,7 @@ protected:
 	// functions for AI to move around the map
 	// Of all the waypoints, which one are we going to move to?
 	UFUNCTION()
-	ATargetPoint* ChooseAvailableWaypoint();
-
-	// after a waypoint is chosen, move to it
-	UFUNCTION()
-	void MoveToWaypoint();
-
-	//virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result);
+	void ChooseAvailableWaypoint();
 
 public:	
 	// Called every frame

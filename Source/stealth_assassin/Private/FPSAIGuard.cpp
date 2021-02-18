@@ -6,8 +6,6 @@
 #include "DrawDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
 #include "FPSGameMode.h"
-#include "Engine/TargetPoint.h"
-#include "AIController.h"
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -20,7 +18,7 @@ AFPSAIGuard::AFPSAIGuard()
 	PawnSensingComp->OnSeePawn.AddDynamic(this, &AFPSAIGuard::OnPawnSeen);
 	PawnSensingComp->OnHearNoise.AddDynamic(this, &AFPSAIGuard::OnNoiseHeard);
 
-	GuardState = EAIState::Idle;
+	SetGuardState(EAIState::Idle);
 }	
 
 // Called when the game starts or when spawned
@@ -33,7 +31,9 @@ void AFPSAIGuard::BeginPlay()
 
 	if (CanWander)
 	{
-		MoveToWaypoint();
+		bIsWandering = false;
+		//MoveToWaypoint();
+		ChooseAvailableWaypoint();
 	}
 	
 }
@@ -105,35 +105,21 @@ void AFPSAIGuard::SetGuardState(EAIState NewState)
 	onGuardStateChanged(NewState);
 }
 
-ATargetPoint* AFPSAIGuard::ChooseAvailableWaypoint()
+void AFPSAIGuard::ChooseAvailableWaypoint()
 {
-
-	// what about a rand function?
-	for (auto target : Waypoints)
+	if (GuardState == EAIState::Idle)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Our waypoint is %s"), &target);
+		UE_LOG(LogTemp, Log, TEXT("chooseavailablewaypoint"));
+
+		//int index = rand() % Waypoints.Num();
+		auto index = FMath::RandRange(0, Waypoints.Num() - 1);
+
+		NextTarget = Waypoints[index];
+
+		// We have a waypoint, so wander
+		bIsWandering = true;
 	}
-
-	return nullptr;
 }
-
-void AFPSAIGuard::MoveToWaypoint()
-{
-	// call choose rando waypoint
-	ATargetPoint* nextTarget;
-	nextTarget = ChooseAvailableWaypoint();
-
-	// move to that waypoint
-
-}
-
-//void AFPSAIGuard::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
-//{
-//	//AIController::OnMoveCompleted(RequestID, Result);
-//
-//	GetWorldTimerManager().ClearTimer(TimerHandle_Wander);
-//	GetWorldTimerManager().SetTimer(TimerHandle_Wander, this, &AFPSAIGuard::MoveToWaypoint, 3.0f);
-//}
 
 // Called every frame
 void AFPSAIGuard::Tick(float DeltaTime)
@@ -152,9 +138,50 @@ void AFPSAIGuard::Tick(float DeltaTime)
 		//SetActorRotation(NewLookAt);
 		SetActorRotation(FMath::Lerp(GetActorRotation(), NewLookAt, 1.0f));
 		isRotating = false;
+		
+		//if (CanWander && GuardState == EAIState::Idle)
+		//{
+		//	bIsWandering = true;
+		//}
 
 	}
 
+	if (bIsWandering && (GuardState == EAIState::Idle))
+	{
+		// move to that waypoint
+		if (NextTarget == nullptr)
+		{
+			bIsWandering = false;
+			return;
+		}
+
+		FVector direction = NextTarget->GetActorLocation() - GetActorLocation();
+		direction.Normalize();
+
+		// Our Z is wack. Just push it to zero cause we don't care.
+		direction.Z = 0.0f;
+
+		FRotator newLookAt = FRotationMatrix::MakeFromX(direction).Rotator();
+		newLookAt.Pitch = 0.0f;
+		newLookAt.Roll = 0.0f;
+
+		GetRootComponent()->MoveComponent(direction, newLookAt, true);
+
+		// we use isnearlyzero cause nothing is sacred. 
+		// if we're there, just stop the charade.
+		UE_LOG(LogTemp, Log, TEXT("About to choose another wander location "));
+		if (direction.IsZero() || direction.IsNearlyZero(0.01))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Resetting wander "));
+
+			bIsWandering = false;
+			//MoveToWaypoint();
+			// wait a tick
+
+			GetWorldTimerManager().ClearTimer(TimerHandle_Wander);
+			GetWorldTimerManager().SetTimer(TimerHandle_Wander, this, &AFPSAIGuard::ChooseAvailableWaypoint, 3.0f);
+		}
+	}
 }
 
 
