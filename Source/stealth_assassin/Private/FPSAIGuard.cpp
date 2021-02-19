@@ -109,8 +109,6 @@ void AFPSAIGuard::ChooseAvailableWaypoint()
 {
 	if (GuardState == EAIState::Idle)
 	{
-		UE_LOG(LogTemp, Log, TEXT("chooseavailablewaypoint"));
-
 		//int index = rand() % Waypoints.Num();
 		auto index = FMath::RandRange(0, Waypoints.Num() - 1);
 
@@ -118,6 +116,9 @@ void AFPSAIGuard::ChooseAvailableWaypoint()
 
 		// We have a waypoint, so wander
 		bIsWandering = true;
+
+		// we could use unavigationsystem::simplemovetoactor()
+		// you would then use stopmovement to stop them!
 	}
 }
 
@@ -138,11 +139,6 @@ void AFPSAIGuard::Tick(float DeltaTime)
 		//SetActorRotation(NewLookAt);
 		SetActorRotation(FMath::Lerp(GetActorRotation(), NewLookAt, 1.0f));
 		isRotating = false;
-		
-		//if (CanWander && GuardState == EAIState::Idle)
-		//{
-		//	bIsWandering = true;
-		//}
 
 	}
 
@@ -169,15 +165,11 @@ void AFPSAIGuard::Tick(float DeltaTime)
 
 		// we use isnearlyzero cause nothing is sacred. 
 		// if we're there, just stop the charade.
-		UE_LOG(LogTemp, Log, TEXT("About to choose another wander location "));
 		if (direction.IsZero() || direction.IsNearlyZero(0.01))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Resetting wander "));
-
 			bIsWandering = false;
-			//MoveToWaypoint();
-			// wait a tick
 
+			// wait a tick
 			GetWorldTimerManager().ClearTimer(TimerHandle_Wander);
 			GetWorldTimerManager().SetTimer(TimerHandle_Wander, this, &AFPSAIGuard::ChooseAvailableWaypoint, 3.0f);
 		}
