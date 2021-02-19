@@ -64,26 +64,9 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 void AFPSCharacter::Fire()
 {
-	// Requests that the function Fire() is called on the server instead of the client;
+	// Requests that the function ServerFire() is called on the server instead of the client;
 	// We have ServerFire_Implementation and ServerFire_Validation below
 	ServerFire();
-
-	//// try and fire a projectile
-	//if (ProjectileClass)
-	//{
-	//	// Grabs location from the mesh that must have a socket called "Muzzle" in his skeleton
-	//	FVector MuzzleLocation = GunMeshComponent->GetSocketLocation("Muzzle");
-	//	// Use controller rotation which is our view direction in first person
-	//	FRotator MuzzleRotation = GetControlRotation();
-
-	//	//Set Spawn Collision Handling Override
-	//	FActorSpawnParameters ActorSpawnParams;
-	//	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-	//	ActorSpawnParams.Instigator = this;
-
-	//	// spawn the projectile at the muzzle
-	//	GetWorld()->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, ActorSpawnParams);
-	//}
 
 	// try and play the sound if specified
 	// only on client
