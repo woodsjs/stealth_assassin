@@ -41,7 +41,7 @@ protected:
 	EAIState GuardState;
 
 	// Handle AI walking around map
-	UPROPERTY(EditInstanceOnly, category = "AI")
+	UPROPERTY(EditInstanceOnly, category = "AI", meta = (EditCondition = "CanWander"))
 	TArray<AActor*> Waypoints;
 
 	UPROPERTY(EditInstanceOnly, category = "AI")
