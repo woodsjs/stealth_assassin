@@ -38,7 +38,11 @@ protected:
 	FTimerHandle TimerHandle_ResetOrientation;
 
 	// handle visual above AI, ? or !
+	UPROPERTY(ReplicatedUsing=OnRep_GuardState)
 	EAIState GuardState;
+
+	UFUNCTION()
+	void OnRep_GuardState();
 
 	// Handle AI walking around map
 	UPROPERTY(EditInstanceOnly, category = "AI", meta = (EditCondition = "CanWander"))

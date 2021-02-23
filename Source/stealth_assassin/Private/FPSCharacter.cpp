@@ -8,7 +8,18 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimSequence.h"
 #include "Components/PawnNoiseEmitterComponent.h"
+#include "UnrealNetwork.h"
 
+
+//void AFPSCharacter::ServerFire_Implementation()
+//{
+//
+//}
+//
+//bool AFPSCharacter::ServerFire_Validate()
+//{
+//	return true;
+//}
 
 AFPSCharacter::AFPSCharacter()
 {
@@ -24,11 +35,13 @@ AFPSCharacter::AFPSCharacter()
 	Mesh1PComponent->CastShadow = false;
 	Mesh1PComponent->SetRelativeRotation(FRotator(2.0f, -15.0f, 5.0f));
 	Mesh1PComponent->SetRelativeLocation(FVector(0, 0, -160.0f));
+	Mesh1PComponent->SetOnlyOwnerSee(false);
 
 	// Create a gun mesh component
 	GunMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP_Gun"));
 	GunMeshComponent->CastShadow = false;
 	GunMeshComponent->SetupAttachment(Mesh1PComponent, "GripPoint");
+	GunMeshComponent->SetOnlyOwnerSee(false);
 
 	NoiseEmitterComponent = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("NoiseEmitter"));
 }
@@ -50,26 +63,28 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 }
 
 
-void AFPSCharacter::Fire()
+void AFPSCharacter::Tick(float DeltaTime)
 {
-	// try and fire a projectile
-	if (ProjectileClass)
+	Super::Tick(DeltaTime);
+
+	if (!IsLocallyControlled())
 	{
-		// Grabs location from the mesh that must have a socket called "Muzzle" in his skeleton
-		FVector MuzzleLocation = GunMeshComponent->GetSocketLocation("Muzzle");
-		// Use controller rotation which is our view direction in first person
-		FRotator MuzzleRotation = GetControlRotation();
+		FRotator NewRot = CameraComponent->GetRelativeRotation();
+		NewRot.Pitch = RemoteViewPitch * 360.0f/255.0f;
 
-		//Set Spawn Collision Handling Override
-		FActorSpawnParameters ActorSpawnParams;
-		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-		ActorSpawnParams.Instigator = this;
-
-		// spawn the projectile at the muzzle
-		GetWorld()->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, ActorSpawnParams);
+		CameraComponent->SetRelativeRotation(NewRot);
 	}
 
+}
+
+void AFPSCharacter::Fire()
+{
+	// Requests that the function ServerFire() is called on the server instead of the client;
+	// We have ServerFire_Implementation and ServerFire_Validation below
+	ServerFire();
+
 	// try and play the sound if specified
+	// only on client
 	if (FireSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
@@ -87,6 +102,30 @@ void AFPSCharacter::Fire()
 	}
 }
 
+void AFPSCharacter::ServerFire_Implementation()
+{
+	// try and fire a projectile
+	if (ProjectileClass)
+	{
+		// Grabs location from the mesh that must have a socket called "Muzzle" in his skeleton
+		FVector MuzzleLocation = GunMeshComponent->GetSocketLocation("Muzzle");
+		// Use controller rotation which is our view direction in first person
+		FRotator MuzzleRotation = GetControlRotation();
+
+		//Set Spawn Collision Handling Override
+		FActorSpawnParameters ActorSpawnParams;
+		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+		ActorSpawnParams.Instigator = this;
+
+		// spawn the projectile at the muzzle
+		GetWorld()->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, ActorSpawnParams);
+	}
+}
+
+bool AFPSCharacter::ServerFire_Validate()
+{
+	return true;
+}
 
 void AFPSCharacter::MoveForward(float Value)
 {
@@ -105,4 +144,11 @@ void AFPSCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(GetActorRightVector(), Value);
 	}
+}
+
+void AFPSCharacter::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AFPSCharacter, bIsCarryingObjective);
+	//DOREPLIFETIME_CONDITION(AFPSCharacter, bIsCarryingObjective, COND_OwnerOnly);
 }

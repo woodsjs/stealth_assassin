@@ -75,3 +75,6 @@ DerivedDataCache/*
 
 # Don't pull Epic game's starter content - we should move these into our own folders for use
 Content/StarterContent/*
+
+#Don't pull the compiled windows game
+WindowsNoEditor/*

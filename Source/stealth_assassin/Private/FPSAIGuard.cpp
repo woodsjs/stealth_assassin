@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 #include "Math/UnrealMathUtility.h"
 #include "FPSGameMode.h"
+#include "UnrealNetwork.h"
 
 // Sets default values
 AFPSAIGuard::AFPSAIGuard()
@@ -36,6 +37,12 @@ void AFPSAIGuard::BeginPlay()
 		ChooseAvailableWaypoint();
 	}
 	
+}
+
+void AFPSAIGuard::OnRep_GuardState()
+{
+	onGuardStateChanged(GuardState);
+
 }
 
 void AFPSAIGuard::OnPawnSeen(APawn* SeenPawn)
@@ -101,8 +108,9 @@ void AFPSAIGuard::SetGuardState(EAIState NewState)
 	}
 
 	GuardState = NewState;
+	OnRep_GuardState();
 
-	onGuardStateChanged(NewState);
+	//onGuardStateChanged(NewState);
 }
 
 void AFPSAIGuard::ChooseAvailableWaypoint()
@@ -175,5 +183,12 @@ void AFPSAIGuard::Tick(float DeltaTime)
 		}
 	}
 }
+
+	void AFPSAIGuard::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > &OutLifetimeProps) const
+	{
+		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+		DOREPLIFETIME(AFPSAIGuard, GuardState);
+	}
+
 
 
